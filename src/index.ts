@@ -1,12 +1,12 @@
 import {
     convertToMgdl,
-    getNightscoutEntries,
+    getLastNightscoutEntry,
     getSibionicsEntries,
     processDirection,
     uploadNightscoutEntry,
 } from "./utils";
 
-async function run() {
+async function main() {
     const cgmData = await getSibionicsEntries();
 
     if (!cgmData) {
@@ -14,14 +14,22 @@ async function run() {
         return;
     }
 
+    const lastNightscoutEntry = await getLastNightscoutEntry();
+    const lastTimestamp = lastNightscoutEntry?.date || 0;
+
     const glucoseInfos = cgmData.data.glucoseInfos;
-    console.log("cgm: ", glucoseInfos[glucoseInfos.length - 1]);
 
-    // const nightscoutEntries = await getNightscoutEntries();
-    // console.log(nightscoutEntries);
-    //
+    const newEntries = glucoseInfos.filter((entry) => {
+        const entryTimestamp = Number(entry.t);
+        return entryTimestamp > lastTimestamp;
+    });
 
-    const dataNs = glucoseInfos.map((entry) => ({
+    if (newEntries.length === 0) {
+        console.log("No new entries to upload");
+        return;
+    }
+
+    const dataNs = newEntries.map((entry) => ({
         type: "sgv",
         sgv: convertToMgdl(entry.v),
         direction: processDirection(entry.s) || "Flat",
@@ -31,17 +39,24 @@ async function run() {
     }));
 
     await uploadNightscoutEntry(dataNs);
-
-    // await uploadNightscoutEntry([
-    //     {
-    //         type: "sgv",
-    //         sgv: 134,
-    //         direction: "Flat",
-    //         device: "Yoru's Sibionics Uploader",
-    //         date: 1741930201521,
-    //         dateString: "2025-03-14T05:30:01.000Z",
-    //     },
-    // ]);
 }
 
-run();
+function scheduleMain() {
+    const now = new Date();
+    const delay = 5 - (now.getMinutes() % 5);
+    const nextRun = new Date(now.getTime() + delay * 60000);
+    nextRun.setSeconds(0, 0);
+
+    const timeUntilNextRun = nextRun.getTime() - now.getTime();
+
+    setTimeout(() => {
+        main().catch(console.error);
+        setInterval(() => {
+            main().catch(console.error);
+        }, 5 * 60000);
+    }, timeUntilNextRun);
+
+    console.log(`Next run scheduled for: ${nextRun.toISOString()}`);
+}
+
+scheduleMain();

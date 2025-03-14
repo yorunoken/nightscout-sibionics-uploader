@@ -20,7 +20,7 @@ export async function getSibionicsEntries(): Promise<SibionicsEntry | null> {
     return data.json() as Promise<SibionicsEntry>;
 }
 
-export async function getNightscoutEntries() {
+export async function getLastNightscoutEntry() {
     const url = `${nightscoutUrl}api/v1/slice/entries/dateString/sgv/.*/.*?count=1`;
 
     try {
