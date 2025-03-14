@@ -1,3 +1,5 @@
+export const unitConvert = 18.018;
+
 export const nightscoutHeaders = {
     "api-secret": process.env.NIGHTSCOUT_API_KEY!,
     "User-Agent": "Sibionics Nightscout Uploader",

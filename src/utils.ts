@@ -1,48 +1,69 @@
-import { nightscoutHeaders, nightscoutUrl, sibionicsHeaders, sibionicsUrl } from "./consts";
+import { nightscoutHeaders, nightscoutUrl, sibionicsHeaders, sibionicsUrl, unitConvert } from "./consts";
 import type { NightscoutEntry, SibionicsAuth, SibionicsEntry } from "./types";
 
-const unitConvert = 18.018;
-
 export async function getSibionicsEntries(sibionicsApiKey: string): Promise<SibionicsEntry | null> {
-    const data = await fetch(`${sibionicsUrl}/user/app/follow/deviceGlucose`, {
-        method: "POST",
-        headers: {
-            authorization: sibionicsApiKey,
-            ...sibionicsHeaders,
-        },
-        body: JSON.stringify({
-            range: "24",
-            id: process.env.SIBIONICS_USER_ID?.toString(),
-        }),
-    });
+    try {
+        console.log("Fetching Sibionics entries...");
+        const data = await fetch(`${sibionicsUrl}/user/app/follow/deviceGlucose`, {
+            method: "POST",
+            headers: {
+                authorization: sibionicsApiKey,
+                ...sibionicsHeaders,
+            },
+            body: JSON.stringify({
+                range: "24",
+                id: process.env.SIBIONICS_USER_ID?.toString(),
+            }),
+        });
 
-    if (!data.ok) {
-        return null;
+        console.log("Sibionics get entries:", data.status, data.statusText);
+
+        if (!data.ok) {
+            console.error("Failed to get Sibionics entries:", data.status, data.statusText);
+            return null;
+        }
+
+        return data.json() as Promise<SibionicsEntry>;
+    } catch (error) {
+        console.error("Failed to fetch Sibionics entries:", error);
+        throw error;
     }
-
-    return data.json() as Promise<SibionicsEntry>;
 }
 
 export async function getSibionicsApiKey() {
-    const res = await fetch(`${sibionicsUrl}/auth/app/user/login`, {
-        method: "POST",
-        headers: {
-            lang: "en_US",
-            timezone: "Europe/Istanbul",
-            "content-type": "application/json; charset=utf-8",
-        },
-        body: JSON.stringify({
-            email: process.env.SIBIONICS_LOGIN,
-            password: process.env.SIBIONICS_PASSWORD,
-        }),
-    });
+    try {
+        console.log("Getting Sibionics API key...");
+        const res = await fetch(`${sibionicsUrl}/auth/app/user/login`, {
+            method: "POST",
+            headers: {
+                lang: "en_US",
+                timezone: "Europe/Istanbul",
+                "content-type": "application/json; charset=utf-8",
+            },
+            body: JSON.stringify({
+                email: process.env.SIBIONICS_LOGIN,
+                password: process.env.SIBIONICS_PASSWORD,
+            }),
+        });
 
-    const data = (await res.json()) as SibionicsAuth;
+        console.log("Sibionics login response:", res.status, res.statusText);
 
-    return {
-        accessKey: data.data.access_token,
-        expiresIn: data.data.expires_in,
-    };
+        if (!res.ok) {
+            console.error("Failed to get API key:", res.status, res.statusText);
+            throw new Error(`Failed to get API key: ${res.status}`);
+        }
+
+        const data = (await res.json()) as SibionicsAuth;
+        console.log("API key obtained successfully");
+
+        return {
+            accessKey: data.data.access_token,
+            expiresIn: data.data.expires_in,
+        };
+    } catch (error) {
+        console.error("Failed to get Sibionics API key:", error);
+        throw error;
+    }
 }
 
 export async function getLastNightscoutEntry() {
@@ -80,7 +101,6 @@ export async function getLastNightscoutEntry() {
 }
 
 export async function uploadNightscoutEntry(entries: NightscoutEntry[]): Promise<void> {
-    // console.log("entries: ", entries);
     const url = `${nightscoutUrl}api/v1/entries`;
 
     try {
