@@ -7,9 +7,8 @@ export const nightscoutHeaders = {
 export const nightscoutUrl = process.env.NIGHTSCOUT_URL!;
 
 export const sibionicsHeaders = {
-    authorization: process.env.SIBIONICS_API_KEY!,
     lang: "en_US",
     timezone: "Europe/Istanbul",
     "content-type": "application/json; charset=utf-8",
 };
-export const sibionicsUrl = "https://cgm-ce.sisensing.com/user/app/follow/deviceGlucose";
+export const sibionicsUrl = "https://cgm-ce.sisensing.com";

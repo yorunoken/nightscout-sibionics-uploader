@@ -1,15 +1,18 @@
 import { nightscoutHeaders, nightscoutUrl, sibionicsHeaders, sibionicsUrl } from "./consts";
-import type { NightscoutEntry, SibionicsEntry } from "./types";
+import type { NightscoutEntry, SibionicsAuth, SibionicsEntry } from "./types";
 
 const unitConvert = 18.018;
 
-export async function getSibionicsEntries(): Promise<SibionicsEntry | null> {
-    const data = await fetch(sibionicsUrl, {
+export async function getSibionicsEntries(sibionicsApiKey: string): Promise<SibionicsEntry | null> {
+    const data = await fetch(`${sibionicsUrl}/user/app/follow/deviceGlucose`, {
         method: "POST",
-        headers: sibionicsHeaders,
+        headers: {
+            authorization: sibionicsApiKey,
+            ...sibionicsHeaders,
+        },
         body: JSON.stringify({
             range: "24",
-            id: "1899754303430911120",
+            id: process.env.SIBIONICS_USER_ID?.toString(),
         }),
     });
 
@@ -18,6 +21,28 @@ export async function getSibionicsEntries(): Promise<SibionicsEntry | null> {
     }
 
     return data.json() as Promise<SibionicsEntry>;
+}
+
+export async function getSibionicsApiKey() {
+    const res = await fetch(`${sibionicsUrl}/auth/app/user/login`, {
+        method: "POST",
+        headers: {
+            lang: "en_US",
+            timezone: "Europe/Istanbul",
+            "content-type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+            email: process.env.SIBIONICS_LOGIN,
+            password: process.env.SIBIONICS_PASSWORD,
+        }),
+    });
+
+    const data = (await res.json()) as SibionicsAuth;
+
+    return {
+        accessKey: data.data.access_token,
+        expiresIn: data.data.expires_in,
+    };
 }
 
 export async function getLastNightscoutEntry() {

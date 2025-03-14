@@ -33,12 +33,31 @@ interface SibionicsData {
     success: boolean;
 }
 
-export interface SibionicsEntry {
+interface SibionicsSuccessResponse {
     timestamp: bigint;
-    code: number;
+    code: 200;
     msg: string;
     data: SibionicsData;
     errorData: any;
+    success: boolean;
+}
+
+interface SibionicsUnauthorizedResponse {
+    code: 401;
+    msg: "Login state has expired";
+}
+
+export type SibionicsEntry = SibionicsSuccessResponse | SibionicsUnauthorizedResponse;
+
+export interface SibionicsAuth {
+    timestamp: number;
+    code: number;
+    msg: string;
+    data: {
+        access_token: string;
+        expires_in: number;
+    };
+    errorData: null;
     success: boolean;
 }
 

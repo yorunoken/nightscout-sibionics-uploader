@@ -1,17 +1,50 @@
 import {
     convertToMgdl,
     getLastNightscoutEntry,
+    getSibionicsApiKey,
     getSibionicsEntries,
     processDirection,
     uploadNightscoutEntry,
 } from "./utils";
+import fs from "fs/promises";
+import path from "path";
+
+const API_KEY_FILE = path.join(__dirname, "../.api-key");
+
+async function saveApiKey(apiKey: string) {
+    await fs.writeFile(API_KEY_FILE, apiKey);
+}
+
+async function loadApiKey(): Promise<string | null> {
+    try {
+        const apiKey = await fs.readFile(API_KEY_FILE, "utf-8");
+        return apiKey;
+    } catch {
+        return null;
+    }
+}
 
 async function main() {
-    const cgmData = await getSibionicsEntries();
+    let sibionicsApiKey = await loadApiKey();
+
+    if (!sibionicsApiKey) {
+        const data = await getSibionicsApiKey();
+        sibionicsApiKey = data.accessKey;
+        await saveApiKey(sibionicsApiKey);
+    }
+
+    const cgmData = await getSibionicsEntries(sibionicsApiKey);
 
     if (!cgmData) {
         console.error("Couldn't get CGM data from Sibionics.");
         return;
+    }
+
+    if (cgmData.code === 401) {
+        const data = await getSibionicsApiKey();
+        sibionicsApiKey = data.accessKey;
+        await saveApiKey(sibionicsApiKey);
+        return main();
     }
 
     const lastNightscoutEntry = await getLastNightscoutEntry();
