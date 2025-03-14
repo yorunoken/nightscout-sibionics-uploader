@@ -78,7 +78,7 @@ function scheduleMain() {
     const now = new Date();
     const delay = 5 - (now.getMinutes() % 5);
     const nextRun = new Date(now.getTime() + delay * 60000);
-    nextRun.setSeconds(0, 0);
+    nextRun.setSeconds(30, 0);
 
     const timeUntilNextRun = nextRun.getTime() - now.getTime();
 
