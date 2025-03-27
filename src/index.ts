@@ -76,9 +76,9 @@ async function main() {
 
 function scheduleMain() {
     const now = new Date();
-    const delay = 5 - (now.getMinutes() % 5);
-    const nextRun = new Date(now.getTime() + delay * 60000);
-    nextRun.setSeconds(30, 0);
+    const runSecs = 60;
+    const delay = runSecs - now.getSeconds() + 5;
+    const nextRun = new Date(now.getTime() + delay * 1000);
 
     const timeUntilNextRun = nextRun.getTime() - now.getTime();
 
@@ -86,7 +86,7 @@ function scheduleMain() {
         main().catch(console.error);
         setInterval(() => {
             main().catch(console.error);
-        }, 5 * 60000);
+        }, runSecs * 1000);
     }, timeUntilNextRun);
 
     console.log(`Next run scheduled for: ${nextRun.toISOString()}`);
